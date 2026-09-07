@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import type { CSSProperties } from "react";
 import type {
   CandidateResult,
   RecoveryAction,
@@ -308,11 +309,157 @@ function AnalysisCandidate({
   );
 }
 
-function RecoveryAnalysis({ result }: { result: RecoveryRunResult }) {
-  const stats = analysisStats(result.candidates, result.applied_plan_id);
+type ShowcasePhase = "idle" | "stacking" | "selecting" | "settling" | "settled";
+
+function PassedCandidateCard({
+  candidate,
+  index,
+  selected,
+  visible,
+  stackIndex,
+  phase,
+}: {
+  candidate: CandidateResult;
+  index: number;
+  selected: boolean;
+  visible: boolean;
+  stackIndex: number;
+  phase: ShowcasePhase;
+}) {
+  const metrics = candidate.simulation.metrics;
 
   return (
-    <section className="rp-block ra">
+    <article
+      className={`ra-showcase-card${visible ? " is-visible" : ""}${
+        selected ? " is-selected" : ""
+      }${phase === "selecting" ? " is-selecting" : ""}`}
+      style={
+        {
+          "--stack-index": stackIndex,
+          "--stack-offset": `${Math.min(stackIndex, 4) * 8}px`,
+          "--stack-scale": Math.max(0.9, 1 - stackIndex * 0.025),
+        } as CSSProperties
+      }
+      aria-hidden={!visible}
+    >
+      <div className="ra-showcase-head">
+        <span>STRATEGY {index + 1}</span>
+        <span className="ra-showcase-pass">✓ PASSED</span>
+      </div>
+      <div className="ra-showcase-title">{candidate.plan.strategy_label}</div>
+      <div className="ra-showcase-actions">
+        {candidate.plan.actions.slice(0, 2).map((action, actionIndex) => (
+          <span key={`${action.type}-${actionIndex}`}>{actionText(action)}</span>
+        ))}
+      </div>
+      <div className="ra-showcase-metrics">
+        <div>
+          <span>AVAILABILITY</span>
+          <strong>{metrics ? pct(metrics.availability) : "—"}</strong>
+        </div>
+        <div>
+          <span>AVG LATENCY</span>
+          <strong>{metrics ? `${metrics.avg_latency.toFixed(1)} ms` : "—"}</strong>
+        </div>
+      </div>
+      <div className="ra-showcase-foot">
+        <span>DIGITAL TWIN ✓</span>
+        <span>SAFETY GATE ✓</span>
+      </div>
+      {selected && (phase === "selecting" || phase === "settling") && (
+        <div className="ra-showcase-winner">★ SELECTED — BEST SAFE PLAN</div>
+      )}
+    </article>
+  );
+}
+
+function PassedSolutionsShowcase({
+  candidates,
+  selectedId,
+  visibleCount,
+  phase,
+}: {
+  candidates: { candidate: CandidateResult; originalIndex: number }[];
+  selectedId: string;
+  visibleCount: number;
+  phase: ShowcasePhase;
+}) {
+  return (
+    <div className={`ra-showcase ra-showcase-${phase}`} role="status" aria-live="polite">
+      <div className="ra-showcase-status">
+        <span className="ra-showcase-pulse" />
+        {phase === "selecting" || phase === "settling"
+          ? "Selecting the strongest safe recovery"
+          : `Safety checks passed ${Math.min(visibleCount, candidates.length)} of ${candidates.length}`}
+      </div>
+      <div className="ra-showcase-stage">
+        {candidates.map(({ candidate, originalIndex }, stackIndex) => (
+          <PassedCandidateCard
+            key={candidate.plan.id}
+            candidate={candidate}
+            index={originalIndex}
+            selected={candidate.plan.id === selectedId}
+            visible={stackIndex < visibleCount}
+            stackIndex={stackIndex}
+            phase={phase}
+          />
+        ))}
+      </div>
+      <div className="ra-showcase-dots" aria-hidden="true">
+        {candidates.map(({ candidate }, index) => (
+          <span key={candidate.plan.id} className={index < visibleCount ? "is-complete" : ""} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function RecoveryAnalysis({ result }: { result: RecoveryRunResult }) {
+  const stats = analysisStats(result.candidates, result.applied_plan_id);
+  const passedCandidates = useMemo(
+    () =>
+      result.candidates
+        .map((candidate, originalIndex) => ({ candidate, originalIndex }))
+        .filter(({ candidate }) => candidate.simulation.feasible && candidate.safety.approved),
+    [result],
+  );
+  const prefersReducedMotion =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const shouldShowcase =
+    result.applied_plan_id !== null && passedCandidates.length >= 2 && !prefersReducedMotion;
+  const [showcasePhase, setShowcasePhase] = useState<ShowcasePhase>(
+    shouldShowcase ? "idle" : "settled",
+  );
+  const [visibleCount, setVisibleCount] = useState(0);
+
+  useEffect(() => {
+    if (!shouldShowcase || result.applied_plan_id === null) return;
+
+    const timers: number[] = [];
+
+    timers.push(
+      window.setTimeout(() => {
+        setShowcasePhase("stacking");
+        setVisibleCount(1);
+      }, 180),
+    );
+
+    for (let index = 1; index < passedCandidates.length; index += 1) {
+      timers.push(window.setTimeout(() => setVisibleCount(index + 1), 180 + index * 720));
+    }
+
+    const stackCompleteAt = 180 + (passedCandidates.length - 1) * 720;
+    timers.push(window.setTimeout(() => setShowcasePhase("selecting"), stackCompleteAt + 820));
+    timers.push(window.setTimeout(() => setShowcasePhase("settling"), stackCompleteAt + 1900));
+    timers.push(window.setTimeout(() => setShowcasePhase("settled"), stackCompleteAt + 2650));
+
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [passedCandidates, result.applied_plan_id, result.run_id, shouldShowcase]);
+
+  const showcasing = shouldShowcase && showcasePhase !== "settled";
+
+  return (
+    <section className={`rp-block ra${showcasing ? " ra-is-showcasing" : " ra-is-settled"}`}>
       <div className="ra-header">
         <div className="ra-title">AI RECOVERY ANALYSIS</div>
         <div className="ra-sub">Multiple recovery strategies evaluated before execution</div>
@@ -343,13 +490,24 @@ function RecoveryAnalysis({ result }: { result: RecoveryRunResult }) {
             </div>
           </div>
 
-          <EvalStrip result={result} />
+          {showcasing && result.applied_plan_id !== null ? (
+            <PassedSolutionsShowcase
+              candidates={passedCandidates}
+              selectedId={result.applied_plan_id}
+              visibleCount={visibleCount}
+              phase={showcasePhase}
+            />
+          ) : (
+            <div className="ra-settled-content">
+              <EvalStrip result={result} />
 
-          <div className="ra-cands">
-            {result.candidates.map((c, i) => (
-              <AnalysisCandidate key={c.plan.id} candidate={c} index={i} result={result} />
-            ))}
-          </div>
+              <div className="ra-cands">
+                {result.candidates.map((c, i) => (
+                  <AnalysisCandidate key={c.plan.id} candidate={c} index={i} result={result} />
+                ))}
+              </div>
+            </div>
+          )}
         </>
       )}
     </section>
