@@ -19,11 +19,11 @@ load_dotenv(dotenv_path=_env_path)
 
 LLM_ENABLED = os.getenv("AEGIS_LLM_ENABLED", "false").lower() in ("true", "1", "yes")
 NVIDIA_API_KEY = os.getenv("AEGIS_NVIDIA_API_KEY", os.getenv("NVIDIA_API_KEY", ""))
-NVIDIA_MODEL = os.getenv("AEGIS_NVIDIA_MODEL", "nvidia/nemotron-3.5-lightning-30b-a3b")
+NVIDIA_MODEL = os.getenv("AEGIS_NVIDIA_MODEL", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning")
 NVIDIA_BASE_URL = os.getenv("AEGIS_NVIDIA_BASE_URL", "https://integrate.api.nvidia.com/v1")
 LLM_MODEL = os.getenv("AEGIS_LLM_MODEL", "nemotron-mini")
 OLLAMA_URL = os.getenv("AEGIS_OLLAMA_URL", "http://localhost:11434")
-LLM_TIMEOUT = float(os.getenv("AEGIS_LLM_TIMEOUT", "35.0"))
+LLM_TIMEOUT = float(os.getenv("AEGIS_LLM_TIMEOUT", "60.0"))
 RECOVERY_RUN_AUTO_APPLY_DEFAULT = True   # D6
 
 # --- background simulation / drift ------------------------------------------

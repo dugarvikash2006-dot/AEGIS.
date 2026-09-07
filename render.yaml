@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: aegis-backend
+    runtime: python
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT --workers 1
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: AEGIS_CORS_ORIGINS
+        value: https://aegis-77d2-826zhztlq-butter-byte-6186.vercel.app,http://localhost:5173
+      - key: AEGIS_LLM_ENABLED
+        value: "true"
+      - key: AEGIS_NVIDIA_API_KEY
+        sync: false
+      - key: AEGIS_NVIDIA_MODEL
+        value: nvidia/nemotron-3.5-lightning-30b-a3b
+      - key: AEGIS_LLM_TIMEOUT
+        value: "45.0"

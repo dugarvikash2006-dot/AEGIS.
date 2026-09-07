@@ -18,7 +18,11 @@ from backend.api.context import AppContext
 
 # Comma-separated list of allowed browser origins. Default keeps the Vite dev
 # server working with no configuration; containers pass AEGIS_CORS_ORIGINS.
-_DEFAULT_CORS_ORIGINS = "http://localhost:5173"
+_DEFAULT_CORS_ORIGINS = (
+    "http://localhost:5173,"
+    "http://127.0.0.1:5173,"
+    "https://aegis-77d2-8v1568z2r-butter-byte-6186.vercel.app"
+)
 
 
 def _cors_origins() -> list[str]:
