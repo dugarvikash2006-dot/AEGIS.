@@ -1348,6 +1348,263 @@ button {
   color: #3fb950;
 }
 
+/* Passed-plan reveal: safe candidates arrive one by one, form a physical
+   stack, then the backend-selected plan rises above it before the normal
+   inspector content takes over. */
+.ra-showcase {
+  margin-top: 10px;
+  padding: 10px 8px 8px;
+  overflow: hidden;
+  border: 1px solid #25302c;
+  border-radius: 5px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(63, 185, 80, 0.1), transparent 55%),
+    #0d1117;
+}
+
+.ra-showcase-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 18px;
+  color: #8b98a5;
+  font-size: 7.5px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+}
+
+.ra-showcase-pulse {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #3fb950;
+  box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.5);
+  animation: ra-showcase-pulse 1.3s ease-out infinite;
+}
+
+.ra-showcase-stage {
+  position: relative;
+  height: 228px;
+  margin-top: 5px;
+  perspective: 900px;
+}
+
+.ra-showcase-card {
+  --stack-index: 0;
+  --stack-offset: 0px;
+  --stack-scale: 1;
+  position: absolute;
+  inset: 8px 5px auto;
+  min-height: 190px;
+  padding: 12px;
+  border: 1px solid #2d6a4f;
+  border-left: 3px solid #3fb950;
+  border-radius: 6px;
+  background: linear-gradient(145deg, #101b15 0%, #0c1410 100%);
+  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(63, 185, 80, 0.04);
+  opacity: 0;
+  transform: translate3d(0, 18px, 0) scale(0.72);
+  transform-origin: 50% 50%;
+  pointer-events: none;
+  z-index: calc(var(--stack-index) + 1);
+  transition:
+    opacity 420ms ease,
+    transform 680ms cubic-bezier(0.18, 0.88, 0.24, 1),
+    filter 500ms ease,
+    box-shadow 500ms ease;
+}
+
+.ra-showcase-card.is-visible {
+  opacity: 1;
+  transform: translate3d(0, var(--stack-offset), 0) scale(var(--stack-scale));
+  animation: ra-card-arrive 680ms cubic-bezier(0.18, 0.88, 0.24, 1) both;
+}
+
+.ra-showcase-selecting .ra-showcase-card.is-visible:not(.is-selected) {
+  opacity: 0.36;
+  filter: saturate(0.55) brightness(0.72);
+  transform: translate3d(0, calc(var(--stack-offset) + 14px), -30px) scale(0.92);
+}
+
+.ra-showcase-selecting .ra-showcase-card.is-visible.is-selected {
+  z-index: 50;
+  transform: translate3d(0, 0, 34px) scale(1.015);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.52), 0 0 28px rgba(63, 185, 80, 0.14);
+}
+
+.ra-showcase-selecting .ra-showcase-card,
+.ra-showcase-settling .ra-showcase-card {
+  animation: none;
+}
+
+.ra-showcase-settling .ra-showcase-card.is-visible:not(.is-selected) {
+  opacity: 0;
+  filter: saturate(0.4) brightness(0.5);
+  transform: translate3d(0, 28px, -60px) scale(0.86);
+}
+
+.ra-showcase-settling .ra-showcase-card.is-visible.is-selected {
+  z-index: 50;
+  opacity: 0.18;
+  transform: translate3d(0, -14px, 0) scale(0.78);
+  transform-origin: 50% 0;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.3);
+}
+
+.ra-showcase-settling .ra-showcase-status,
+.ra-showcase-settling .ra-showcase-dots {
+  opacity: 0;
+  transition: opacity 420ms ease;
+}
+
+.ra-showcase-head,
+.ra-showcase-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #697582;
+  font-family: monospace;
+  font-size: 7px;
+  letter-spacing: 0.9px;
+}
+
+.ra-showcase-pass,
+.ra-showcase-foot {
+  color: #3fb950;
+}
+
+.ra-showcase-title {
+  margin-top: 8px;
+  color: #e6edf3;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.ra-showcase-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 8px;
+}
+
+.ra-showcase-actions span {
+  padding: 4px 6px;
+  overflow: hidden;
+  border-radius: 3px;
+  background: #171e27;
+  color: #c9d1d9;
+  font-family: monospace;
+  font-size: 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ra-showcase-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  margin: 8px 0;
+}
+
+.ra-showcase-metrics div {
+  padding: 6px;
+  border-radius: 3px;
+  background: rgba(23, 30, 39, 0.86);
+}
+
+.ra-showcase-metrics span,
+.ra-showcase-metrics strong {
+  display: block;
+}
+
+.ra-showcase-metrics span {
+  margin-bottom: 2px;
+  color: #697582;
+  font-size: 6px;
+  letter-spacing: 0.5px;
+}
+
+.ra-showcase-metrics strong {
+  color: #e6edf3;
+  font-family: monospace;
+  font-size: 10px;
+}
+
+.ra-showcase-winner {
+  position: absolute;
+  right: 10px;
+  bottom: 9px;
+  left: 10px;
+  padding: 6px;
+  border: 1px solid #2d6a4f;
+  border-radius: 3px;
+  background: rgba(14, 23, 18, 0.96);
+  color: #3fb950;
+  font-size: 7.5px;
+  font-weight: 700;
+  letter-spacing: 0.75px;
+  text-align: center;
+  animation: ra-winner-reveal 520ms 220ms ease-out both;
+}
+
+.ra-showcase-dots {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  min-height: 4px;
+}
+
+.ra-showcase-dots span {
+  width: 13px;
+  height: 2px;
+  border-radius: 2px;
+  background: #303944;
+  transition: background 260ms ease, box-shadow 260ms ease;
+}
+
+.ra-showcase-dots span.is-complete {
+  background: #3fb950;
+  box-shadow: 0 0 7px rgba(63, 185, 80, 0.35);
+}
+
+.ra-settled-content {
+  animation: ra-settle-into-panel 640ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes ra-card-arrive {
+  0% { opacity: 0; transform: translate3d(0, 20px, 0) scale(0.72); }
+  65% { opacity: 1; transform: translate3d(0, calc(var(--stack-offset) - 3px), 0) scale(1.015); }
+  100% { opacity: 1; transform: translate3d(0, var(--stack-offset), 0) scale(var(--stack-scale)); }
+}
+
+@keyframes ra-winner-reveal {
+  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ra-settle-into-panel {
+  from { opacity: 0; transform: translateY(-10px) scale(1.025); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes ra-showcase-pulse {
+  70% { box-shadow: 0 0 0 5px rgba(63, 185, 80, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ra-showcase-card,
+  .ra-showcase-card.is-visible,
+  .ra-showcase-winner,
+  .ra-settled-content,
+  .ra-showcase-pulse {
+    animation: none;
+    transition: none;
+  }
+}
+
 /* compact evaluation funnel */
 .ra-strip {
   margin: 10px 0;
